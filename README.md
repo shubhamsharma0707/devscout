@@ -1,4 +1,4 @@
-# DevScout: Open-Source Project Explorer 🚀
+# DevScout: Open-Source Project Explorer 
 
 ##  Project Purpose
 DevScout is a web application designed to help developers find, filter, and sort open-source GitHub repositories. The goal of this project is to create a clean, responsive user interface that dynamically handles real-time data fetched from a public API, strictly using Vanilla JavaScript without any external frameworks.
