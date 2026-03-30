@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevScout Dashboard | Powered by GitHub API</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+    <div class="app-wrapper">
+        <!-- Sidebar with search, filters, and theme toggle -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <span class="icon"></span>
+                <h1>DevScout</h1>
+            </div>
+
+            <div class="control-group">
+                <label for="search-input">Quick Search</label>
+                <div class="input-wrapper">
+                    <span class="search-icon"></span>
+                    <input type="text" id="search-input" placeholder="Keyword (eg. react)...">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="filter-language">Technology</label>
+                <select id="filter-language">
+                    <option value="all">All Languages</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="go">Go</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="sort-select">Rank by</label>
+                <select id="sort-select">
+                    <option value="stars-desc">Most Stars (Popularity)</option>
+                    <option value="stars-asc">Least Stars</option>
+                    <option value="issues-desc">Most Open Issues</option>
+                </select>
+            </div>
+
+            <button id="theme-toggle" class="btn-secondary"> Toggle Dark Mode</button>
+
+            <div class="credits">
+                <p>Created by Shubham Sharma</p>
+            </div>
+        </aside>
+
+        <!-- Main area where repos get rendered -->
+        <main class="main-content">
+            <header class="main-header">
+                <h2>Explore Open-Source Opportunities</h2>
+                <p>Real-time repository analytics from the GitHub REST API</p>
+            </header>
+
+            <div id="loading-msg" class="loading-container">
+                <div class="spinner"></div>
+                <p>Analyzing GitHub Repositories...</p>
+            </div>
+
+            <div id="repo-container" class="grid-container"></div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
