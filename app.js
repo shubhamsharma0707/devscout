@@ -1,99 +1,120 @@
 // ==========================================
-// Grab elements we'll be working with
+// DOM Elements & State
 // ==========================================
 const repoContainer = document.getElementById('repo-container');
 const loadingMsg = document.getElementById('loading-msg');
-const themeToggleBtn = document.getElementById('theme-toggle');
+const searchInput = document.getElementById('search-input');
+const languageDropdown = document.getElementById('filter-language');
+const sortDropdown = document.getElementById('sort-select');
 
-// Keeping fetched repos here so we can sort/filter later
 let masterData = [];
 
 // ==========================================
-// Hit the GitHub API and grab some repos
+// Fetch repos from GitHub
 // ==========================================
 async function fetchRepos() {
     try {
-        // Asking for 20 JS repos sorted by stars - gives us a solid dataset
         const response = await fetch(
-            'https://api.github.com/search/repositories?q=language:javascript&sort=stars&per_page=20'
+            'https://api.github.com/search/repositories?q=stars:>10000&sort=stars&per_page=30'
         );
 
-        if (!response.ok) {
-            throw new Error(`GitHub API responded with ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
 
         const data = await response.json();
         masterData = data.items;
 
-        // Data's here, ditch the spinner and show the goods
         loadingMsg.classList.add('hidden');
         renderCards(masterData);
 
-    } catch (err) {
-        console.error('Something went wrong fetching repos:', err);
-        loadingMsg.innerHTML = `
-            <p>Failed to load data. Rate limit exceeded?<br>Please try again later.</p>
-        `;
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        loadingMsg.innerHTML = `<span style="color: var(--fam-yellow);">Failed to load data. Rate limit exceeded? Please try again later.</span>`;
     }
 }
 
 // ==========================================
-// Turn repo data into HTML cards
+// Render repo cards using .map()
 // ==========================================
-function renderCards(repos) {
-    // If we got nothing back, show a friendly message
-    if (!repos || repos.length === 0) {
-        repoContainer.innerHTML = '<p class="no-results">No repositories matched your search.</p>';
+function renderCards(repositories) {
+    if (!repositories || repositories.length === 0) {
+        repoContainer.innerHTML = '<p class="text-muted" style="text-align:center; grid-column: 1/-1;">No repositories found. Try adjusting your search.</p>';
         return;
     }
 
-    // Using .map() here - no for loops, just functional style
-    const cardsHTML = repos.map(repo => {
-        // Trim down long descriptions so the cards stay tidy
-        const shortDesc = repo.description
-            ? repo.description.substring(0, 110) + '...'
+    const htmlCards = repositories.map(repo => {
+        const cleanDesc = repo.description
+            ? repo.description.substring(0, 100) + '...'
             : 'Explore this codebase on GitHub.';
 
         return `
-            <div class="card">
-                <div class="card-header">
-                    <h3>
-                        <a href="${repo.html_url}" target="_blank" rel="noopener noreferrer">
-                            ${repo.name}
-                        </a>
-                    </h3>
-                    <span class="lang-tag">${repo.language || 'Code'}</span>
-                </div>
+            <div class="bento-card">
+                <span class="status-badge">${repo.language || 'Code'}</span>
+                <h3><a href="${repo.html_url}" target="_blank" rel="noopener noreferrer">${repo.name}</a></h3>
+                <p>${cleanDesc}</p>
 
-                <p class="card-desc">${shortDesc}</p>
-
-                <div class="card-stats">
+                <div class="repo-stats">
                     <span title="Stars"> ${repo.stargazers_count.toLocaleString()}</span>
                     <span title="Forks"> ${repo.forks_count.toLocaleString()}</span>
-                    <span title="Open Issues"> ${repo.open_issues_count.toLocaleString()}</span>
                 </div>
             </div>
         `;
     }).join('');
 
-    // Slap it all into the container at once
-    repoContainer.innerHTML = cardsHTML;
+    repoContainer.innerHTML = htmlCards;
 }
 
 // ==========================================
-// Dark mode toggle
+// Search, Filter, Sort & Debounce
 // ==========================================
-themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
+function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+}
 
-    if (document.body.classList.contains('dark-mode')) {
-        themeToggleBtn.innerText = ' Toggle Light Mode';
-    } else {
-        themeToggleBtn.innerText = ' Toggle Dark Mode';
+function updateDashboard() {
+    let currentData = [...masterData];
+
+    // Search by keyword
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    if (searchTerm) {
+        currentData = currentData.filter(repo => {
+            const name = repo.name ? repo.name.toLowerCase() : '';
+            const desc = repo.description ? repo.description.toLowerCase() : '';
+            return name.includes(searchTerm) || desc.includes(searchTerm);
+        });
     }
-});
 
-// ==========================================
-// Kick things off
-// ==========================================
+    // Filter by language
+    const selectedLang = languageDropdown.value;
+    if (selectedLang !== 'all') {
+        currentData = currentData.filter(repo => {
+            if (!repo.language) return false;
+            return repo.language.toLowerCase() === selectedLang.toLowerCase();
+        });
+    }
+
+    // Sort remaining results
+    const sortValue = sortDropdown.value;
+    currentData.sort((a, b) => {
+        if (sortValue === 'stars-desc') return b.stargazers_count - a.stargazers_count;
+        if (sortValue === 'stars-asc') return a.stargazers_count - b.stargazers_count;
+        if (sortValue === 'issues-desc') return b.open_issues_count - a.open_issues_count;
+        return 0;
+    });
+
+    renderCards(currentData);
+}
+
+// Wire up listeners
+const debouncedUpdate = debounce(updateDashboard, 300);
+searchInput.addEventListener('input', debouncedUpdate);
+languageDropdown.addEventListener('change', updateDashboard);
+sortDropdown.addEventListener('change', updateDashboard);
+
+// Start the app
 fetchRepos();
